@@ -1,49 +1,82 @@
 const express = require('express');
 const app = express();
 const fs = require('fs')
-
+//show the file
 app.use('/', express.static('public'));
 
-app.route('*')
-    .get((req, res,) => {
-        console.log(__dirname + req.url);
-        fs.readdir(__dirname + req.url, (err, files) => {
-            files.forEach(file => file);
+// info on file
+app.get('*/:fileName/info', (req, res,) => {
+    if (req.url !== '/favicon.ico') {
+        const dir = __dirname + '/public/' + req.params.fileName;
+        console.log(dir);
+        fs.stat(dir, (err, stats) => {
+            console.log(stats);
+            res.send(stats)
         });
-        res.send();
-    })
-    .delete((req, res) => {
-            fs.unlink(__dirname + req.url, function (err) {
-                    if (err) throw err;
-                    console.log('File deleted!');
-                    res.send(req.url +' File deleted!');
-                  }); 
-    })
-    .put((req, res) => {
-        // look up for the course
-        // const course = courses.find(c => c.id === parseInt(req.params.id))
-        // if (!course) return res.status(404).send('The course mot found')
-        // // validate
-        // const { error } = validateCourse(req.body)
-        // if (error) return res.status(400).send(error.details[0].message)
-        // // update
-        // course.name = req.body.name;
-        // res.send(course)
-    })
-    .post((req, res) => {
-        // const result = validateCourse(req.body)
-        // if (result.error) {
-        //     //400 bad requset
-        //     res.status(400).send(result.error.details[0].message)
-        //     return
-        // }
-        // const course = {
-        //     id: courses.length + 1,
-        //     name: req.body.name
-        // };
-        // courses.push(course);
-        // res.send(course);
-    });
+    }
+})
 
-const port = process.env.PORT || 3000
+app.route('*')
+    // index Show all files in the folder
+    .get((req, res,) => {
+        if (req.url !== '/favicon.ico') {
+            const dir = __dirname + '/public' + req.url;
+            console.log(dir);
+            fs.readdir(__dirname + '/public' + req.url, (err, files) => {
+                if (files) {
+                    files.forEach(file => console.log(file));
+                }
+                res.send(files);
+            });
+        }
+    })
+
+    //rename
+    .put((req, res) => {
+        // look up for the file if exist
+        const url = `./public${req.url.split('?')[0]}`;
+        console.log(url);
+        if (!fs.existsSync(url)) return res.status(404).send('The file not found');
+        // rename
+        const allDirArrey = url.split('/');
+        allDirArrey.pop();
+        allDirArrey.push(req.query.fileName)
+        const newDir = allDirArrey.join('/');
+        console.log(newDir);
+        // update
+        fs.rename(url, newDir,
+            (err) => {
+                if (err) throw err;
+                console.log('File Renamed!');
+            })
+        res.end()
+    })
+    .copy((req, res) => {
+        // look up for the file if exist
+        const url = `./public${req.url.split('?')[0]}`;
+        console.log(url);
+        if (!fs.existsSync(url)) return res.status(404).send('The file not found');
+        // copy
+        const target = 'public/' + req.query.src
+        console.log(target);
+        fs.copyFile(url, target, (err) => {
+            if (err) throw err;
+            res.send(`${req.url.split('?')[0]} was copied to ${target}`);
+        })
+    })
+
+    .delete((req, res) => {
+        const url = `/public${req.url}`;
+        // look up for the file if exist
+        console.log(url);
+        if (!fs.existsSync(`./public${req.url}`)) return res.status(404).send('The file not found');
+        // delete
+        fs.unlink(__dirname + url, function (err) {
+            if (err) throw err;
+            console.log('File deleted!');
+            res.send(req.url + ' File deleted!');
+        });
+    })
+
+const port = process.env.PORT || 3000;
 app.listen(port, () => { console.log('listen to port ' + port); });
