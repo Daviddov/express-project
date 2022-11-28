@@ -10,6 +10,14 @@ app.use(cors(
 }
 ))
 
+app.use(express.json());
+
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", "*"); // update to match the domain you will make the request from
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    next();
+});
+
 app.use('/', express.static('public'));
 
 
@@ -43,18 +51,14 @@ app.route('*')
     //rename
     .put((req, res) => {
         // look up for the file if exist
-        const url = `./public${req.url.split('?')[0]}`;
-        console.log(url);
-        if (!fs.existsSync(url)) return res.status(404).send('The file not found');
+        const url = `/public${req.url}`;
+        if (!fs.existsSync(__dirname +url)) return res.status(404).send('The file not found');
         // rename
-        const allDirArrey = url.split('/');
-        console.log(allDirArrey);
-        allDirArrey.pop();
-        allDirArrey.push(req.query.fileName)
-        const newDir = allDirArrey.join('/');
-        console.log(newDir);
+
+        const src = `/public/${req.body.src}` ;
+        console.log(src);
         // update
-        fs.rename(url, newDir,
+        fs.rename(__dirname + url,__dirname + src,
             (err) => {
                 if (err) throw err;
                 console.log('File Renamed!');
