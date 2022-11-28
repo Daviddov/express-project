@@ -1,8 +1,17 @@
 const express = require('express');
 const app = express();
-const fs = require('fs')
+const cors = require('cors');
+const fs = require('fs');
+
 //show the file
+app.use(cors(
+    {
+    origin:'http://localhost:5000'
+}
+))
+
 app.use('/', express.static('public'));
+
 
 // info on file
 app.get('*/:fileName/info', (req, res,) => {
@@ -39,6 +48,7 @@ app.route('*')
         if (!fs.existsSync(url)) return res.status(404).send('The file not found');
         // rename
         const allDirArrey = url.split('/');
+        console.log(allDirArrey);
         allDirArrey.pop();
         allDirArrey.push(req.query.fileName)
         const newDir = allDirArrey.join('/');
@@ -78,5 +88,5 @@ app.route('*')
         });
     })
 
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5000;
 app.listen(port, () => { console.log('listen to port ' + port); });
